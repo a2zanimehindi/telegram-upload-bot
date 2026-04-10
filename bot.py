@@ -7,7 +7,7 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 
 BOT_TOKEN = os.getenv("8627945459:AAGftfwkj0vK6gd6thzUVGUJqvxFqei130U")
 VIDARA_API = os.getenv("95a2f013c6166662a507cc3b737cbdd1198f50dec5199c80b195439a9bbc98d6")
-ADMIN_ID = int(os.getenv("6474692320"))
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 queue = asyncio.Queue()
 
