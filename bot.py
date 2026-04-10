@@ -1,10 +1,9 @@
 import re
 import requests
 import asyncio
+import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
-
-import os
 
 BOT_TOKEN = os.getenv("8627945459:AAGftfwkj0vK6gd6thzUVGUJqvxFqei130U")
 VIDARA_API = os.getenv("95a2f013c6166662a507cc3b737cbdd1198f50dec5199c80b195439a9bbc98d6")
@@ -22,13 +21,16 @@ def upload_to_vidara(url, title):
     r = requests.post("https://vidara.so/api/upload/url", json=data, headers=headers)
     return r.text
 
-async def worker():
+async def worker(app):
     while True:
         update, link, title = await queue.get()
-        msg = await update.message.reply_text("⬆️ Uploading...")
-        result = upload_to_vidara(link, title)
-        await msg.edit_text("✅ Done")
-        await update.message.reply_text(result)
+        try:
+            msg = await update.message.reply_text("⬆️ Uploading...")
+            result = upload_to_vidara(link, title)
+            await msg.edit_text("✅ Done")
+            await update.message.reply_text(result)
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {e}")
         queue.task_done()
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,24 +46,16 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await queue.put((update, direct, "Drive Upload"))
             await update.message.reply_text("📥 Added to queue")
 
-async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        return
-
-    file = await context.bot.get_file(update.message.video.file_id)
-    url = file.file_path
-    await queue.put((update, url, "Telegram Video"))
-    await update.message.reply_text("📥 Video added")
-
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(MessageHandler(filters.TEXT, handle_text))
-    app.add_handler(MessageHandler(filters.VIDEO, handle_video))
 
-    asyncio.create_task(worker())
+    # start worker
+    asyncio.create_task(worker(app))
 
-    print("Bot running")
+    print("Bot running...")
     await app.run_polling()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
